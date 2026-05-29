@@ -170,6 +170,10 @@ h1 {
     linear-gradient(to right, transparent calc(80.198% - 0.5px), var(--line) calc(80.198% - 0.5px) calc(80.198% + 0.5px), transparent calc(80.198% + 0.5px));
 }
 
+.matrix-panel.is-collapsed::before {
+  background: none;
+}
+
 .matrix {
   --columns: 4;
   position: relative;
@@ -189,10 +193,27 @@ h1 {
   display: flex;
   align-items: end;
   padding: 14px 20px;
-  background: #f5f4f2;
-  border-right: 1px solid var(--line);
+  background: #fff;
+  border-right: 0;
   border-bottom: 4px solid #111;
   overflow: hidden;
+}
+
+.corner-head::before,
+.grade-head::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 4px;
+  width: 1px;
+  background: var(--line);
+  pointer-events: none;
+}
+
+.matrix-panel.is-collapsed .corner-head,
+.matrix-panel.is-collapsed .grade-head {
+  border-right: 0;
 }
 
 .corner-head {
@@ -248,12 +269,12 @@ h1 {
   min-height: 68px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 20px;
+  justify-content: flex-start;
+  gap: 14px;
   padding: 0 28px;
   border: 0;
   border-bottom: 1px solid var(--line);
-  background: var(--soft);
+  background: #fff;
   color: var(--ink);
   font-size: 24px;
   font-weight: 700;
@@ -262,7 +283,7 @@ h1 {
 }
 
 .accordion-trigger:hover {
-  background: #ebe9e6;
+  background: #fff;
 }
 
 .accordion-trigger::after {
@@ -271,12 +292,13 @@ h1 {
   height: 10px;
   border-right: 2px solid var(--ink);
   border-bottom: 2px solid var(--ink);
-  transform: rotate(45deg) translateY(-2px);
+  transform: rotate(45deg);
+  transform-origin: center;
   transition: transform 160ms ease;
 }
 
 .accordion-trigger[aria-expanded="true"]::after {
-  transform: rotate(225deg) translateY(-1px);
+  transform: rotate(225deg);
 }
 
 .skill-title,

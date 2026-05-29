@@ -191,6 +191,7 @@ function renderMatrix() {
   matrix.innerHTML = "";
   const visibleGrades = grades;
   const lastSkillId = rows.filter((item) => item.type !== "section").at(-1)?.id;
+  matrix.parentElement.classList.toggle("is-collapsed", !openGroups.text);
   matrix.style.setProperty("--columns", grades.length);
   matrix.append(makeCell("div", "corner-head", "Компетенции"));
 
