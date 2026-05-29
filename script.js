@@ -159,6 +159,8 @@ let openGroups = { text: true };
 
 const matrix = document.querySelector("#matrix");
 const gradeButtons = document.querySelectorAll(".filter-chip");
+const skillsSummaryTitle = document.querySelector("#skills-summary-title");
+const skillsSummaryContent = document.querySelector("#skills-summary-content");
 
 function statusKey(rowId, gradeId) {
   return `${rowId}:${gradeId}`;
@@ -188,6 +190,7 @@ function makeCell(tag, className, text) {
 function renderMatrix() {
   matrix.innerHTML = "";
   const visibleGrades = grades;
+  const lastSkillId = rows.filter((item) => item.type !== "section").at(-1)?.id;
   matrix.style.setProperty("--columns", grades.length);
   matrix.append(makeCell("div", "corner-head", "Компетенции"));
 
@@ -223,6 +226,7 @@ function renderMatrix() {
     if (!openGroups.text) return;
 
     const title = makeCell("div", "skill-title", "");
+    title.classList.toggle("is-last-matrix-row", row.id === lastSkillId);
     const h = makeCell("h3", "", row.title);
     const tag = makeCell("div", `tag tag--${row.kind}`, row.kind === "required" ? "Обязательный навык" : "Дополнительный навык");
     title.append(h, tag);
@@ -236,6 +240,7 @@ function renderMatrix() {
       cell.dataset.grade = grade.id;
       cell.dataset.kind = row.kind;
       cell.dataset.status = getStatus(row.id, grade.id);
+      cell.classList.toggle("is-last-matrix-row", row.id === lastSkillId);
       cell.setAttribute("aria-label", `${row.title}, ${grade.label}: ${statusLabel[cell.dataset.status]}`);
       if (selectedGrade !== "all" && selectedGrade !== grade.id) {
         cell.classList.add("is-muted");
@@ -255,7 +260,7 @@ function renderMatrix() {
   });
 
   updateGradeControls();
-  updateStats();
+  updateSidebarSkillStats();
   typographElement(document.body);
 }
 
@@ -267,25 +272,112 @@ function updateGradeControls() {
   });
 }
 
-function updateStats() {
-  const countedGrades = selectedGrade === "all" ? grades : grades.filter((grade) => grade.id === selectedGrade);
-  const skillItems = rows
+function countGreenSkillsForGrade(gradeId, kind) {
+  return rows
     .filter((row) => row.type !== "section")
-    .flatMap((row) => countedGrades
-      .filter((grade) => row.cells[grade.id])
-      .map((grade) => ({ row, gradeId: grade.id })));
-  const requiredRows = skillItems.filter((item) => item.row.kind === "required");
-  const extraRows = skillItems.filter((item) => item.row.kind === "extra");
-  const yesRows = skillItems.filter((item) => getStatus(item.row.id, item.gradeId) === "yes");
-  const yesRequired = yesRows.filter((item) => item.row.kind === "required");
-  const yesExtra = yesRows.filter((item) => item.row.kind === "extra");
+    .filter((row) => !kind || row.kind === kind)
+    .filter((row) => row.cells[gradeId])
+    .filter((row) => getStatus(row.id, gradeId) === "yes")
+    .length;
+}
 
-  document.querySelector("#available-total").textContent = skillItems.length;
-  document.querySelector("#available-required").textContent = requiredRows.length;
-  document.querySelector("#available-extra").textContent = extraRows.length;
-  document.querySelector("#done-total").textContent = yesRows.length;
-  document.querySelector("#done-required").textContent = yesRequired.length;
-  document.querySelector("#done-extra").textContent = yesExtra.length;
+function getSkillTotals() {
+  const skillRows = rows.filter((row) => row.type !== "section");
+  return {
+    total: skillRows.length,
+    required: skillRows.filter((row) => row.kind === "required").length,
+    extra: skillRows.filter((row) => row.kind === "extra").length,
+  };
+}
+
+function getGreenCountsForGrade(gradeId) {
+  return {
+    total: countGreenSkillsForGrade(gradeId),
+    required: countGreenSkillsForGrade(gradeId, "required"),
+    extra: countGreenSkillsForGrade(gradeId, "extra"),
+  };
+}
+
+function createSkillStatsList(items) {
+  const list = document.createElement("ul");
+  list.className = "skills-summary__list";
+
+  items.forEach((text) => {
+    const item = document.createElement("li");
+    const icon = document.createElement("span");
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = "🍄";
+
+    const value = document.createElement("span");
+    value.textContent = text;
+
+    item.append(icon, value);
+    list.append(item);
+  });
+
+  return list;
+}
+
+function appendGradeSkillSummary(grade, totals) {
+  const counts = getGreenCountsForGrade(grade.id);
+  const section = document.createElement("section");
+  section.className = "skills-summary__section";
+
+  const title = document.createElement("h3");
+  title.className = "skills-summary__title";
+  title.textContent = `Навыки ${grade.caption.split(" ")[0]}`;
+
+  section.append(
+    title,
+    createSkillStatsList([
+      `${counts.total} из ${totals.total} всего`,
+      `${counts.required} из ${totals.required} обязательно`,
+      `${counts.extra} из ${totals.extra} дополнительно`,
+    ]),
+  );
+
+  skillsSummaryContent.append(section);
+}
+
+function updateSidebarSkillStats() {
+  const totals = getSkillTotals();
+  skillsSummaryContent.innerHTML = "";
+
+  if (selectedGrade === "all") {
+    const gradesWithGreenSkills = grades.filter((grade) => getGreenCountsForGrade(grade.id).total > 0);
+
+    if (gradesWithGreenSkills.length === 0) {
+      skillsSummaryTitle.textContent = "Навыки";
+      skillsSummaryContent.append(createSkillStatsList([
+        `${totals.total} всего`,
+        `${totals.required} обязательно`,
+        `${totals.extra} дополнительно`,
+      ]));
+      return;
+    }
+
+    const firstGrade = gradesWithGreenSkills[0];
+    const firstCounts = getGreenCountsForGrade(firstGrade.id);
+    skillsSummaryTitle.textContent = `Навыки ${firstGrade.caption.split(" ")[0]}`;
+    skillsSummaryContent.append(createSkillStatsList([
+      `${firstCounts.total} из ${totals.total} всего`,
+      `${firstCounts.required} из ${totals.required} обязательно`,
+      `${firstCounts.extra} из ${totals.extra} дополнительно`,
+    ]));
+
+    gradesWithGreenSkills
+      .slice(1)
+      .forEach((grade) => appendGradeSkillSummary(grade, totals));
+    return;
+  }
+
+  const selected = grades.find((grade) => grade.id === selectedGrade);
+  skillsSummaryTitle.textContent = `Навыки ${selected.caption.split(" ")[0]}`;
+  skillsSummaryContent.append(createSkillStatsList([
+    `${getGreenCountsForGrade(selectedGrade).total} из ${totals.total} всего`,
+    `${getGreenCountsForGrade(selectedGrade).required} из ${totals.required} обязательно`,
+    `${getGreenCountsForGrade(selectedGrade).extra} из ${totals.extra} дополнительно`,
+  ]));
 }
 
 gradeButtons.forEach((button) => {
