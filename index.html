@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Матрица компетенций редакторов</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-layout">
+      <aside class="sidebar" aria-label="Фильтры матрицы">
+        <div>
+          <p class="sidebar__kicker">Матрица компетенций</p>
+          <h1>Редакторы</h1>
+
+          <section class="filter-block" aria-labelledby="grade-filter-title">
+            <h2 id="grade-filter-title">Грейд</h2>
+            <div class="chip-group" role="tablist" aria-label="Грейд">
+              <button class="filter-chip is-active" type="button" data-grade-filter="all" role="tab" aria-selected="true">Все</button>
+              <button class="filter-chip" type="button" data-grade-filter="junior" role="tab" aria-selected="false">Junior</button>
+              <button class="filter-chip" type="button" data-grade-filter="middle" role="tab" aria-selected="false">Middle</button>
+              <button class="filter-chip" type="button" data-grade-filter="senior" role="tab" aria-selected="false">Senior</button>
+              <button class="filter-chip" type="button" data-grade-filter="lead" role="tab" aria-selected="false">Lead</button>
+            </div>
+          </section>
+        </div>
+
+        <button class="sidebar-action" type="button">Кнопка появится здесь</button>
+      </aside>
+
+      <main class="content">
+        <section class="matrix-panel" aria-label="Верхняя часть матрицы">
+          <div class="matrix" id="matrix"></div>
+        </section>
+
+        <section class="bottom-stats" aria-live="polite" aria-label="Подсчет навыков">
+          <div>
+            <p class="eyebrow">В выбранном фильтре</p>
+            <p class="stats-line"><span id="available-total">0</span> навыков: <span id="available-required">0</span> обязательных и <span id="available-extra">0</span> дополнительных</p>
+          </div>
+          <div class="done-counters">
+            <div>
+              <span id="done-total">0</span>
+              <small>есть всего</small>
+            </div>
+            <div>
+              <span id="done-required">0</span>
+              <small>обязательных</small>
+            </div>
+            <div>
+              <span id="done-extra">0</span>
+              <small>дополнительных</small>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
