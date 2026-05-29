@@ -282,12 +282,14 @@ h1 {
   line-height: 1.38;
   text-align: left;
   cursor: pointer;
-  transition: background 140ms ease, box-shadow 140ms ease;
+  transition: background 140ms ease;
 }
 
 .cell-body {
   display: block;
+  position: relative;
   width: 100%;
+  padding-left: 28px;
 }
 
 .skill-cell:empty {
@@ -306,29 +308,46 @@ h1 {
 
 .skill-cell[data-status="yes"] {
   background: var(--yes);
-  box-shadow: inset 0 0 0 2px var(--yes-border);
 }
 
 .skill-cell[data-status="no"] {
   background: var(--no);
-  box-shadow: inset 0 0 0 2px var(--no-border);
 }
 
 .skill-cell[data-status="partial"] {
   background: var(--partial);
-  box-shadow: inset 0 0 0 2px var(--partial-border);
 }
 
-.cell-status {
-  display: inline-flex;
-  margin-bottom: 10px;
-  padding: 3px 7px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.62);
-  color: #3b332b;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
+.skill-cell[data-status="yes"] .cell-body::before,
+.skill-cell[data-status="no"] .cell-body::before,
+.skill-cell[data-status="partial"] .cell-body::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.12em;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.skill-cell[data-status="yes"] .cell-body::before {
+  background:
+    linear-gradient(135deg, transparent 43%, #fff 44% 56%, transparent 57%) 6px 7px / 8px 5px no-repeat,
+    #3d9b62;
+}
+
+.skill-cell[data-status="no"] .cell-body::before {
+  border: 3px solid #ff4659;
+  background:
+    linear-gradient(45deg, transparent 40%, #ff4659 41% 59%, transparent 60%) center / 11px 11px no-repeat,
+    linear-gradient(-45deg, transparent 40%, #ff4659 41% 59%, transparent 60%) center / 11px 11px no-repeat;
+}
+
+.skill-cell[data-status="partial"] .cell-body::before {
+  background:
+    linear-gradient(#fff, #fff) center / 10px 3px no-repeat,
+    #bd8a13;
 }
 
 .bottom-stats {

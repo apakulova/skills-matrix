@@ -246,11 +246,6 @@ function renderMatrix() {
         cell.disabled = true;
       } else {
         const body = makeCell("span", "cell-body", "");
-        const status = getStatus(row.id, grade.id);
-        if (status !== "none") {
-          const pill = makeCell("span", "cell-status", statusLabel[status]);
-          body.append(pill);
-        }
         body.append(document.createTextNode(text));
         cell.append(body);
       }
