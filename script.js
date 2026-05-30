@@ -241,13 +241,13 @@ function typographText(value) {
 
   let result = value
     .replace(/"([^"]+)"/g, "«$1»")
-    .replace(/(\d)\s*-\s*(?=\d)/g, "$1–")
-    .replace(/\s[-–—]\s/g, "\u00A0— ")
-    .replace(/(\d)\s+([%₽$€]|[а-яё]{1,5}\b)/gi, "$1\u00A0$2");
+    .replace(/(\d)[ \t\u00A0]*-[ \t\u00A0]*(?=\d)/g, "$1–")
+    .replace(/[ \t\u00A0][-–—][ \t\u00A0]/g, "\u00A0— ")
+    .replace(/(\d)[ \t\u00A0]+([%₽$€]|[а-яё]{1,5}\b)/gi, "$1\u00A0$2");
 
   for (let i = 0; i < 3; i += 1) {
-    const smallWordPattern = new RegExp(`(^|[\\s\\u00A0(«])(${smallWords})\\s+`, "giu");
-    const chainedSmallWordPattern = new RegExp(`\\u00A0(${smallWords})\\s+`, "giu");
+    const smallWordPattern = new RegExp(`(^|[ \\t\\u00A0(«])(${smallWords})[ \\t\\u00A0]+`, "giu");
+    const chainedSmallWordPattern = new RegExp(`\\u00A0(${smallWords})[ \\t\\u00A0]+`, "giu");
     result = result.replace(smallWordPattern, "$1$2\u00A0");
     result = result.replace(chainedSmallWordPattern, "\u00A0$1\u00A0");
   }
@@ -296,16 +296,6 @@ function updateMatrixLayoutVariables() {
   matrixPanel.style.setProperty("--first-column-width", `${firstColumnWidth}px`);
   matrixPanel.style.setProperty("--grade-column-width", `${gradeColumnWidth}px`);
   matrixPanel.style.setProperty("--matrix-render-width", `${matrixWidth}px`);
-}
-
-function updateStickyHeaderOffset() {
-  const header = matrix.querySelector(".corner-head");
-  if (!header) return;
-
-  const panelTop = matrixPanel.getBoundingClientRect().top + window.scrollY;
-  const maxOffset = Math.max(0, matrixPanel.offsetHeight - header.offsetHeight);
-  const offset = Math.round(clampNumber(window.scrollY - panelTop, 0, maxOffset));
-  matrixPanel.style.setProperty("--sticky-header-offset", `${offset}px`);
 }
 
 function statusKey(rowId, gradeId) {
@@ -444,7 +434,6 @@ function renderMatrix() {
   updateGradeControls();
   updateSidebarSkillStats();
   typographElement(document.body);
-  updateStickyHeaderOffset();
 }
 
 function updateGradeControls() {
@@ -688,10 +677,6 @@ matrix.addEventListener("click", (event) => {
   renderMatrix();
 });
 
-window.addEventListener("scroll", updateStickyHeaderOffset, { passive: true });
-window.addEventListener("resize", () => {
-  updateMatrixLayoutVariables();
-  updateStickyHeaderOffset();
-});
+window.addEventListener("resize", updateMatrixLayoutVariables);
 
 renderMatrix();

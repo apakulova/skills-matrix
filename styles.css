@@ -263,14 +263,15 @@ button {
 
 .content {
   min-width: 0;
+  height: 100vh;
+  overflow: auto;
   padding: 0;
 }
 
 .matrix-panel {
   position: relative;
   min-height: 100vh;
-  overflow-x: auto;
-  overflow-y: clip;
+  overflow-x: visible;
   padding-bottom: 8px;
 }
 
@@ -306,9 +307,8 @@ button {
 
 .corner-head,
 .grade-head {
-  position: relative;
-  transform: translateY(var(--sticky-header-offset, 0px));
-  align-self: start;
+  position: sticky;
+  top: 0;
   z-index: 4;
   min-height: 90px;
   display: flex;
@@ -318,7 +318,6 @@ button {
   border-right: 0;
   border-bottom: 0;
   overflow: visible;
-  will-change: transform;
 }
 
 .corner-head::before,
@@ -587,6 +586,8 @@ button {
   }
 
   .content {
+    height: auto;
+    overflow: visible;
     padding: 0 16px 34px;
   }
 
@@ -595,12 +596,12 @@ button {
   }
 
   .matrix-panel {
-    overflow-x: auto;
+    overflow-x: visible;
   }
 
   .corner-head,
   .grade-head {
-    transform: translateY(var(--sticky-header-offset, 0px));
+    top: 0;
   }
 
 }
