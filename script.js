@@ -3,25 +3,25 @@ const grades = [
     id: "junior",
     label: "Младший редактор",
     caption: "Junior editor",
-    image: "assets/junior-mushroom.png",
+    image: "assets/junior-mushroom.png?v=20260530-crop3",
   },
   {
     id: "middle",
-    label: "Редактор",
+    label: "Просто редактор",
     caption: "Middle editor",
-    image: "assets/middle-mushroom.png",
+    image: "assets/middle-mushroom.png?v=20260530-crop3",
   },
   {
     id: "senior",
     label: "Старший редактор",
     caption: "Senior editor",
-    image: "assets/senior-mushroom.png",
+    image: "assets/senior-mushroom.png?v=20260530-crop3",
   },
   {
     id: "lead",
     label: "Ведущий редактор",
     caption: "Lead editor",
-    image: "assets/lead-figure.png",
+    image: "assets/lead-figure.png?v=20260530-crop3",
   },
 ];
 
@@ -169,7 +169,7 @@ function clampNumber(value, min, max) {
 function updateMatrixLayoutVariables() {
   const panelWidth = matrix.parentElement.clientWidth;
   const firstColumnWidth = Math.round(clampNumber(window.innerWidth * 0.2, 240, 315));
-  const gradeColumnWidth = Math.round(Math.max(295, (panelWidth - firstColumnWidth) / grades.length));
+  const gradeColumnWidth = Math.round(Math.max(320, (panelWidth - firstColumnWidth) / grades.length));
   const matrixWidth = firstColumnWidth + (gradeColumnWidth * grades.length);
 
   matrix.parentElement.style.setProperty("--first-column-width", `${firstColumnWidth}px`);
@@ -333,9 +333,11 @@ function createSkillStatsList(items) {
 
   items.forEach((text) => {
     const item = document.createElement("li");
-    const icon = document.createElement("span");
+    const icon = document.createElement("img");
+    icon.className = "skills-summary__icon";
+    icon.src = "assets/skill-counter-mushroom.png?v=20260530";
+    icon.alt = "";
     icon.setAttribute("aria-hidden", "true");
-    icon.textContent = "🍄";
 
     const value = document.createElement("span");
     value.textContent = text;

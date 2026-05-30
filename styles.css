@@ -14,8 +14,8 @@
   --accent: #96713c;
   --sidebar: 320px;
   --first-column-width: 315px;
-  --grade-column-width: 295px;
-  --matrix-render-width: 1495px;
+  --grade-column-width: 320px;
+  --matrix-render-width: 1595px;
   --matrix-line-1: var(--first-column-width);
   --matrix-line-2: calc(var(--first-column-width) + var(--grade-column-width));
   --matrix-line-3: calc(var(--first-column-width) + var(--grade-column-width) + var(--grade-column-width));
@@ -31,7 +31,7 @@ body {
   min-height: 100vh;
   background: var(--paper);
   color: var(--ink);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Manrope", Arial, Helvetica, sans-serif;
 }
 
 button {
@@ -52,31 +52,54 @@ button {
   flex-direction: column;
   justify-content: space-between;
   gap: 32px;
-  padding: 28px 32px 32px;
+  padding: 14px 32px 32px;
   background: #fff;
   border-right: 1px solid var(--line);
 }
 
-.sidebar__kicker,
-.eyebrow {
-  margin: 0 0 8px;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.2;
+.sidebar-logo {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr);
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 36px;
+}
+
+.sidebar-logo img {
+  width: auto;
+  height: 82px;
+  object-fit: contain;
+  object-position: left top;
+}
+
+.sidebar-logo__text {
+  display: grid;
+  gap: 4px;
+}
+
+.sidebar-logo__title {
+  color: var(--black, #000);
+  font-family: "Panama Monospace", "Courier New", monospace;
+  font-size: 30px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 30px;
   text-transform: uppercase;
 }
 
-h1 {
-  margin: 0 0 42px;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 42px;
-  line-height: 0.98;
+.sidebar-logo__subtitle {
+  color: var(--black, #000);
+  font-family: "Aeroport Mono", "Courier New", monospace;
+  font-size: 13px;
+  font-style: normal;
   font-weight: 400;
+  line-height: 18px;
+  text-transform: uppercase;
 }
 
 .filter-block h2 {
   margin: 0 0 14px;
-  font-size: 19px;
+  font-size: 24px;
   line-height: 1.1;
 }
 
@@ -91,7 +114,7 @@ h1 {
 .skills-summary h2,
 .skills-summary__title {
   margin: 0 0 14px;
-  font-size: 19px;
+  font-size: 24px;
   line-height: 1.1;
 }
 
@@ -105,11 +128,18 @@ h1 {
 
 .skills-summary__list li {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 8px;
   color: var(--muted);
   font-size: 16px;
   line-height: 1.25;
+}
+
+.skills-summary__icon {
+  width: 18px;
+  height: 22px;
+  flex: 0 0 auto;
+  object-fit: contain;
 }
 
 .skills-summary__list li span:last-child {
@@ -205,8 +235,8 @@ h1 {
   padding: 14px 20px;
   background: #fff;
   border-right: 0;
-  border-bottom: 4px solid #111;
-  overflow: hidden;
+  border-bottom: 0;
+  overflow: visible;
 }
 
 .corner-head::before,
@@ -216,8 +246,22 @@ h1 {
   top: 0;
   right: 0;
   bottom: 4px;
+  z-index: 3;
   width: 1px;
   background: var(--line);
+  pointer-events: none;
+}
+
+.corner-head::after,
+.grade-head::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 4;
+  height: 4px;
+  background: #111;
   pointer-events: none;
 }
 
@@ -231,10 +275,10 @@ h1 {
   align-items: center;
   color: var(--black, #000);
   font-family: "Panama Monospace", "Courier New", monospace;
-  font-size: 32px;
+  font-size: 30px;
   font-style: normal;
   font-weight: 400;
-  line-height: 32px;
+  line-height: 30px;
   text-transform: uppercase;
 }
 
@@ -245,30 +289,33 @@ h1 {
 
 .grade-head img {
   position: absolute;
-  left: 10px;
-  bottom: -11px;
-  max-width: 78px;
-  max-height: 108px;
+  left: 0;
+  bottom: 0;
+  z-index: 1;
+  width: auto;
+  height: 126px;
+  max-width: 116px;
   object-fit: contain;
   pointer-events: none;
 }
 
 .grade-head[data-grade="lead"] img {
-  left: -8px;
-  max-width: 98px;
-  max-height: 128px;
+  left: 0;
+  bottom: 0;
+  height: 120px;
+  max-width: 120px;
 }
 
 .grade-title {
   position: relative;
-  z-index: 1;
-  margin-left: 76px;
+  z-index: 2;
+  margin-left: 104px;
   color: var(--black, #000);
   font-family: "Panama Monospace", "Courier New", monospace;
-  font-size: 32px;
+  font-size: 30px;
   font-style: normal;
   font-weight: 400;
-  line-height: 32px;
+  line-height: 30px;
   text-transform: uppercase;
 }
 

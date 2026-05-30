@@ -4,14 +4,22 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Матрица компетенций редакторов</title>
-    <link rel="stylesheet" href="styles.css?v=20260530-fluid-first-column" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css?v=20260530-manrope" />
   </head>
   <body>
     <div class="app-layout">
       <aside class="sidebar" aria-label="Фильтры матрицы">
         <div>
-          <p class="sidebar__kicker">Матрица компетенций</p>
-          <h1>Редакторы</h1>
+          <header class="sidebar-logo" aria-label="Матрица компетенций редакторов">
+            <img src="assets/hero-mushroom.png?v=20260530-manrope" alt="" aria-hidden="true" />
+            <div class="sidebar-logo__text">
+              <span class="sidebar-logo__title">Матрица компетенций</span>
+              <span class="sidebar-logo__subtitle">редакторов</span>
+            </div>
+          </header>
 
           <section class="filter-block" aria-labelledby="grade-filter-title">
             <h2 id="grade-filter-title">Грейд</h2>
@@ -40,6 +48,6 @@
       </main>
     </div>
 
-    <script src="script.js?v=20260530-fluid-first-column"></script>
+    <script src="script.js?v=20260530-manrope"></script>
   </body>
 </html>
