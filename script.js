@@ -162,6 +162,21 @@ const gradeButtons = document.querySelectorAll(".filter-chip");
 const skillsSummaryTitle = document.querySelector("#skills-summary-title");
 const skillsSummaryContent = document.querySelector("#skills-summary-content");
 
+function clampNumber(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function updateMatrixLayoutVariables() {
+  const panelWidth = matrix.parentElement.clientWidth;
+  const firstColumnWidth = Math.round(clampNumber(window.innerWidth * 0.2, 240, 315));
+  const gradeColumnWidth = Math.round(Math.max(295, (panelWidth - firstColumnWidth) / grades.length));
+  const matrixWidth = firstColumnWidth + (gradeColumnWidth * grades.length);
+
+  matrix.parentElement.style.setProperty("--first-column-width", `${firstColumnWidth}px`);
+  matrix.parentElement.style.setProperty("--grade-column-width", `${gradeColumnWidth}px`);
+  matrix.parentElement.style.setProperty("--matrix-render-width", `${matrixWidth}px`);
+}
+
 function statusKey(rowId, gradeId) {
   return `${rowId}:${gradeId}`;
 }
@@ -187,9 +202,22 @@ function makeCell(tag, className, text) {
   return node;
 }
 
+function getOrderedGrades() {
+  if (selectedGrade === "all") return grades;
+
+  const activeGrade = grades.find((grade) => grade.id === selectedGrade);
+  if (!activeGrade) return grades;
+
+  return [
+    activeGrade,
+    ...grades.filter((grade) => grade.id !== selectedGrade),
+  ];
+}
+
 function renderMatrix() {
   matrix.innerHTML = "";
-  const visibleGrades = grades;
+  updateMatrixLayoutVariables();
+  const visibleGrades = getOrderedGrades();
   const lastSkillId = rows.filter((item) => item.type !== "section").at(-1)?.id;
   matrix.parentElement.classList.toggle("is-collapsed", !openGroups.text);
   matrix.style.setProperty("--columns", grades.length);
@@ -405,5 +433,7 @@ matrix.addEventListener("click", (event) => {
   setStatus(cell.dataset.row, cell.dataset.grade, next);
   renderMatrix();
 });
+
+window.addEventListener("resize", updateMatrixLayoutVariables);
 
 renderMatrix();
