@@ -327,6 +327,44 @@ function getGreenCountsForGrade(gradeId) {
   };
 }
 
+function hasMarkedSkillsForGrade(gradeId) {
+  return rows
+    .filter((row) => row.type !== "section")
+    .some((row) => getStatus(row.id, gradeId) !== "none");
+}
+
+function resetGradeStatuses(gradeId) {
+  Object.keys(statuses)
+    .filter((key) => key.endsWith(`:${gradeId}`))
+    .forEach((key) => {
+      delete statuses[key];
+    });
+  localStorage.setItem("editorMatrixStatuses", JSON.stringify(statuses));
+}
+
+function getGradeShortName(grade) {
+  return grade.caption.split(" ")[0];
+}
+
+function createResetGradeButton(grade) {
+  const button = document.createElement("button");
+  button.className = "skills-summary__reset";
+  button.type = "button";
+  button.dataset.resetGrade = grade.id;
+  button.title = "Сбросить";
+  button.setAttribute("aria-label", `Сбросить оценки грейда ${getGradeShortName(grade)}`);
+  return button;
+}
+
+function setSkillSummaryTitle(text, grade) {
+  skillsSummaryTitle.innerHTML = "";
+  skillsSummaryTitle.classList.toggle("has-reset", Boolean(grade));
+  skillsSummaryTitle.append(document.createTextNode(text));
+  if (grade) {
+    skillsSummaryTitle.append(createResetGradeButton(grade));
+  }
+}
+
 function createSkillStatsList(items) {
   const list = document.createElement("ul");
   list.className = "skills-summary__list";
@@ -356,7 +394,10 @@ function appendGradeSkillSummary(grade, totals) {
 
   const title = document.createElement("h3");
   title.className = "skills-summary__title";
-  title.textContent = `Навыки ${grade.caption.split(" ")[0]}`;
+  title.append(
+    document.createTextNode(`Навыки ${getGradeShortName(grade)}`),
+    createResetGradeButton(grade),
+  );
 
   section.append(
     title,
@@ -375,10 +416,10 @@ function updateSidebarSkillStats() {
   skillsSummaryContent.innerHTML = "";
 
   if (selectedGrade === "all") {
-    const gradesWithGreenSkills = grades.filter((grade) => getGreenCountsForGrade(grade.id).total > 0);
+    const gradesWithMarkedSkills = grades.filter((grade) => hasMarkedSkillsForGrade(grade.id));
 
-    if (gradesWithGreenSkills.length === 0) {
-      skillsSummaryTitle.textContent = "Навыки";
+    if (gradesWithMarkedSkills.length === 0) {
+      setSkillSummaryTitle("Навыки");
       skillsSummaryContent.append(createSkillStatsList([
         `${totals.total} всего`,
         `${totals.required} обязательно`,
@@ -387,29 +428,43 @@ function updateSidebarSkillStats() {
       return;
     }
 
-    const firstGrade = gradesWithGreenSkills[0];
+    const firstGrade = gradesWithMarkedSkills[0];
     const firstCounts = getGreenCountsForGrade(firstGrade.id);
-    skillsSummaryTitle.textContent = `Навыки ${firstGrade.caption.split(" ")[0]}`;
+    setSkillSummaryTitle(`Навыки ${getGradeShortName(firstGrade)}`, firstGrade);
     skillsSummaryContent.append(createSkillStatsList([
       `${firstCounts.total} из ${totals.total} всего`,
       `${firstCounts.required} из ${totals.required} обязательно`,
       `${firstCounts.extra} из ${totals.extra} дополнительно`,
     ]));
 
-    gradesWithGreenSkills
+    gradesWithMarkedSkills
       .slice(1)
       .forEach((grade) => appendGradeSkillSummary(grade, totals));
     return;
   }
 
   const selected = grades.find((grade) => grade.id === selectedGrade);
-  skillsSummaryTitle.textContent = `Навыки ${selected.caption.split(" ")[0]}`;
+  setSkillSummaryTitle(`Навыки ${getGradeShortName(selected)}`, hasMarkedSkillsForGrade(selectedGrade) ? selected : null);
   skillsSummaryContent.append(createSkillStatsList([
     `${getGreenCountsForGrade(selectedGrade).total} из ${totals.total} всего`,
     `${getGreenCountsForGrade(selectedGrade).required} из ${totals.required} обязательно`,
     `${getGreenCountsForGrade(selectedGrade).extra} из ${totals.extra} дополнительно`,
   ]));
 }
+
+skillsSummaryContent.addEventListener("click", (event) => {
+  const resetButton = event.target.closest("[data-reset-grade]");
+  if (!resetButton) return;
+  resetGradeStatuses(resetButton.dataset.resetGrade);
+  renderMatrix();
+});
+
+skillsSummaryTitle.addEventListener("click", (event) => {
+  const resetButton = event.target.closest("[data-reset-grade]");
+  if (!resetButton) return;
+  resetGradeStatuses(resetButton.dataset.resetGrade);
+  renderMatrix();
+});
 
 gradeButtons.forEach((button) => {
   button.addEventListener("click", () => {

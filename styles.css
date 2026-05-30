@@ -118,6 +118,57 @@ button {
   line-height: 1.1;
 }
 
+.skills-summary h2.has-reset,
+.skills-summary__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.skills-summary__reset {
+  position: relative;
+  flex: 0 0 auto;
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #a7a39e;
+  cursor: pointer;
+}
+
+.skills-summary__reset::before,
+.skills-summary__reset::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.skills-summary__reset::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.skills-summary__reset::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.skills-summary__reset:hover {
+  background: #e3e1de;
+  color: var(--ink);
+}
+
+.skills-summary__reset:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
 .skills-summary__list {
   display: grid;
   gap: 10px;
@@ -338,7 +389,7 @@ button {
   align-items: center;
   justify-content: flex-start;
   gap: 14px;
-  padding: 0 28px;
+  padding: 0 24px;
   border: 0;
   border-bottom: 1px solid var(--line);
   background: #fff;
