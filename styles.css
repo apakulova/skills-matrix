@@ -67,6 +67,7 @@ button {
 .sidebar {
   position: sticky;
   top: 0;
+  z-index: 20;
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -75,6 +76,7 @@ button {
   padding: 14px 32px 32px;
   background: #fff;
   border-right: 1px solid var(--line);
+  overflow: visible;
 }
 
 .sidebar-logo {
@@ -200,9 +202,10 @@ button {
 }
 
 .skills-summary__list li {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   color: var(--muted);
   font-size: var(--text-body-size);
   font-weight: 400;
@@ -221,8 +224,75 @@ button {
   height: 22px;
 }
 
-.skills-summary__list li span:last-child {
+.skills-summary__list li span:last-child,
+.skills-summary__value {
   color: var(--ink);
+}
+
+.skills-summary__value {
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.skills-summary__help-wrap {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-left: 1px;
+}
+
+.skills-summary__help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 1px solid #aba49d;
+  border-radius: 50%;
+  background: transparent;
+  color: #8f8880;
+  font: 700 9px/1 var(--font-body);
+  cursor: help;
+}
+
+.skills-summary__help:hover {
+  border-color: #9f978d;
+  color: var(--ink);
+}
+
+.skills-summary__help:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.skills-summary__tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 40;
+  width: min(256px, calc(100vw - 36px));
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.16);
+  color: var(--ink);
+  font-size: var(--text-body-s-size);
+  font-weight: 400;
+  line-height: var(--text-body-s-line);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.14s ease, visibility 0.14s ease;
+}
+
+.skills-summary__help-wrap:hover .skills-summary__tooltip,
+.skills-summary__help-wrap.is-open .skills-summary__tooltip,
+.skills-summary__help:focus + .skills-summary__tooltip {
+  opacity: 1;
+  visibility: visible;
 }
 
 .chip-group {
@@ -469,6 +539,10 @@ button {
   padding: 20px 24px;
 }
 
+.is-merged-subrow {
+  grid-row: span 2;
+}
+
 .skill-title h3 {
   margin: 0;
   font-size: var(--text-competency-size);
@@ -529,6 +603,10 @@ button {
   text-align: left;
   cursor: pointer;
   transition: background 140ms ease;
+}
+
+.skill-cell--subrow {
+  min-height: 112px;
 }
 
 .grade-head[data-grade="lead"],

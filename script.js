@@ -209,6 +209,7 @@ const rows = [
     id: "financial-impact",
     title: "Вклад в выполнение целей",
     subrow: true,
+    countAsSkill: false,
     kinds: {
       senior: "extra",
       lead: "extra",
@@ -226,6 +227,11 @@ const basicMinimumIcons = {
   empty: "assets/1.png?v=20260530-crop",
   progress: "assets/2.png?v=20260530-crop",
   complete: "assets/3.png?v=20260530-crop",
+};
+const skillStatsTooltips = {
+  required: "Этими навыками должны владеть все редакторы Авито без исключения. Если есть проблемы с такими навыками, обсуди это с руководителем — надо срочно это исправлять.",
+  extra: "Каждый старший и ведущий редактор должен владеть хотя бы одним из этих навыков.",
+  basicMinimum: "Если хотя бы столько ячеек зелёные — всё отлично.",
 };
 const statusLabel = {
   none: "Без оценки",
@@ -279,6 +285,7 @@ let openGroups = { text: true, information: true, "product-thinking": true };
 
 const matrix = document.querySelector("#matrix");
 const matrixPanel = matrix.parentElement;
+const contentPanel = matrixPanel.parentElement;
 const gradeButtons = document.querySelectorAll(".filter-chip");
 const skillsSummaryTitle = document.querySelector("#skills-summary-title");
 const skillsSummaryContent = document.querySelector("#skills-summary-content");
@@ -333,6 +340,10 @@ function getKindLabel(kind) {
   return "";
 }
 
+function countsAsSkill(row) {
+  return row.countAsSkill !== false;
+}
+
 function getOrderedGrades() {
   if (selectedGrade === "all") return grades;
 
@@ -345,7 +356,15 @@ function getOrderedGrades() {
   ];
 }
 
+function restoreMatrixScroll(scrollTop, scrollLeft) {
+  contentPanel.scrollTop = scrollTop;
+  contentPanel.scrollLeft = scrollLeft;
+}
+
 function renderMatrix() {
+  const previousScrollTop = contentPanel.scrollTop;
+  const previousScrollLeft = contentPanel.scrollLeft;
+
   matrix.innerHTML = "";
   updateMatrixLayoutVariables();
   const visibleGrades = getOrderedGrades();
@@ -374,7 +393,7 @@ function renderMatrix() {
   });
 
   let currentGroup = null;
-  rows.forEach((row) => {
+  rows.forEach((row, index) => {
     if (row.type === "section") {
       currentGroup = row.id;
       if (!(currentGroup in openGroups)) openGroups[currentGroup] = true;
@@ -387,14 +406,48 @@ function renderMatrix() {
     }
 
     if (!openGroups[currentGroup]) return;
+    const nextRow = rows[index + 1];
+    const hasSubrow = Boolean(nextRow?.subrow && nextRow.title === row.title);
+
+    if (row.subrow) {
+      visibleGrades.forEach((grade, gradeIndex) => {
+        const text = row.cells[grade.id] || "";
+        if (!text) return;
+
+        const kind = getCellKind(row, grade.id);
+        const cell = makeCell("button", "skill-cell skill-cell--subrow", "");
+        cell.type = "button";
+        cell.dataset.row = row.id;
+        cell.dataset.grade = grade.id;
+        if (kind) cell.dataset.kind = kind;
+        cell.dataset.status = getStatus(row.id, grade.id);
+        cell.classList.toggle("is-last-matrix-row", row.id === lastSkillId);
+        cell.style.gridColumn = String(gradeIndex + 2);
+        cell.setAttribute("aria-label", `${row.title}, ${grade.label}: ${statusLabel[cell.dataset.status]}`);
+        if (selectedGrade !== "all" && selectedGrade !== grade.id) {
+          cell.classList.add("is-muted");
+          cell.tabIndex = -1;
+        }
+
+        const body = makeCell("span", "cell-body", "");
+        if (kind && kind !== row.kind) {
+          body.append(makeCell("span", `tag tag--${kind} cell-tag`, getKindLabel(kind)));
+        }
+        body.append(document.createTextNode(text));
+        cell.append(body);
+        matrix.append(cell);
+      });
+      return;
+    }
 
     const title = makeCell("div", "skill-title", "");
-    title.classList.toggle("is-last-matrix-row", row.id === lastSkillId);
-    if (!row.subrow) {
-      const h = makeCell("h3", "", row.title);
-      title.append(h);
+    title.classList.toggle("is-last-matrix-row", row.id === lastSkillId || nextRow?.id === lastSkillId);
+    if (hasSubrow) {
+      title.classList.add("is-merged-subrow");
     }
-    if (row.kind && !row.subrow) {
+    const h = makeCell("h3", "", row.title);
+    title.append(h);
+    if (row.kind) {
       const tag = makeCell("div", `tag tag--${row.kind}`, getKindLabel(row.kind));
       title.append(tag);
     }
@@ -409,7 +462,11 @@ function renderMatrix() {
       cell.dataset.grade = grade.id;
       if (kind) cell.dataset.kind = kind;
       cell.dataset.status = getStatus(row.id, grade.id);
-      cell.classList.toggle("is-last-matrix-row", row.id === lastSkillId);
+      const shouldMergeCell = hasSubrow && !nextRow.cells[grade.id];
+      cell.classList.toggle("is-last-matrix-row", row.id === lastSkillId || (shouldMergeCell && nextRow.id === lastSkillId));
+      if (shouldMergeCell) {
+        cell.classList.add("is-merged-subrow");
+      }
       cell.setAttribute("aria-label", `${row.title}, ${grade.label}: ${statusLabel[cell.dataset.status]}`);
       if (selectedGrade !== "all" && selectedGrade !== grade.id) {
         cell.classList.add("is-muted");
@@ -434,6 +491,8 @@ function renderMatrix() {
   updateGradeControls();
   updateSidebarSkillStats();
   typographElement(document.body);
+  restoreMatrixScroll(previousScrollTop, previousScrollLeft);
+  requestAnimationFrame(() => restoreMatrixScroll(previousScrollTop, previousScrollLeft));
 }
 
 function updateGradeControls() {
@@ -448,6 +507,7 @@ function countGreenSkillsForGrade(gradeId, kind) {
   return rows
     .filter((row) => row.type !== "section")
     .filter((row) => row.cells[gradeId])
+    .filter((row) => kind || countsAsSkill(row))
     .filter((row) => !kind || getCellKind(row, gradeId) === kind)
     .filter((row) => getStatus(row.id, gradeId) === "yes")
     .length;
@@ -455,18 +515,20 @@ function countGreenSkillsForGrade(gradeId, kind) {
 
 function getSkillTotals(gradeId) {
   const skillRows = rows.filter((row) => row.type !== "section");
+  const countedSkillRows = skillRows.filter(countsAsSkill);
   if (!gradeId) {
     return {
-      total: skillRows.length,
-      required: skillRows.filter((row) => grades.some((grade) => getCellKind(row, grade.id) === "required")).length,
+      total: countedSkillRows.length,
+      required: countedSkillRows.filter((row) => grades.some((grade) => getCellKind(row, grade.id) === "required")).length,
       extra: skillRows.filter((row) => grades.some((grade) => getCellKind(row, grade.id) === "extra")).length,
     };
   }
 
   const rowsForGrade = gradeId ? skillRows.filter((row) => row.cells[gradeId]) : skillRows;
+  const countedRowsForGrade = rowsForGrade.filter(countsAsSkill);
   return {
-    total: skillRows.length,
-    required: rowsForGrade.filter((row) => getCellKind(row, gradeId) === "required").length,
+    total: countedSkillRows.length,
+    required: countedRowsForGrade.filter((row) => getCellKind(row, gradeId) === "required").length,
     extra: rowsForGrade.filter((row) => getCellKind(row, gradeId) === "extra").length,
   };
 }
@@ -485,6 +547,7 @@ function getBasicMinimumStatsItem(greenCount) {
       text: `${basicMinimum} базовый минимум`,
       icon: basicMinimumIcons.empty,
       iconClass: "skills-summary__icon--basket",
+      tooltip: skillStatsTooltips.basicMinimum,
     };
   }
 
@@ -493,6 +556,7 @@ function getBasicMinimumStatsItem(greenCount) {
       text: `${basicMinimum}+ значит базовый минимум есть`,
       icon: basicMinimumIcons.complete,
       iconClass: "skills-summary__icon--basket",
+      tooltip: skillStatsTooltips.basicMinimum,
     };
   }
 
@@ -500,6 +564,21 @@ function getBasicMinimumStatsItem(greenCount) {
     text: `${greenCount} из ${basicMinimum} на базовый минимум`,
     icon: basicMinimumIcons.progress,
     iconClass: "skills-summary__icon--basket",
+    tooltip: skillStatsTooltips.basicMinimum,
+  };
+}
+
+function getRequiredStatsItem(text) {
+  return {
+    text,
+    tooltip: skillStatsTooltips.required,
+  };
+}
+
+function getExtraStatsItem(text) {
+  return {
+    text,
+    tooltip: skillStatsTooltips.extra,
   };
 }
 
@@ -556,18 +635,64 @@ function createSkillStatsList(items) {
     icon.setAttribute("aria-hidden", "true");
 
     const value = document.createElement("span");
+    value.className = "skills-summary__value";
     value.textContent = data.text;
 
     item.append(icon, value);
+    if (data.tooltip) {
+      const help = document.createElement("span");
+      help.className = "skills-summary__help-wrap";
+
+      const button = document.createElement("button");
+      button.className = "skills-summary__help";
+      button.type = "button";
+      button.setAttribute("aria-label", data.tooltip);
+      button.textContent = "?";
+
+      const tooltip = document.createElement("span");
+      tooltip.className = "skills-summary__tooltip";
+      tooltip.textContent = data.tooltip;
+
+      help.append(button, tooltip);
+      item.append(help);
+    }
     list.append(item);
   });
 
   return list;
 }
 
-function appendGradeSkillSummary(grade, totals) {
+function closeSkillTooltips(except = null) {
+  document.querySelectorAll(".skills-summary__help-wrap.is-open").forEach((wrap) => {
+    if (wrap !== except) wrap.classList.remove("is-open");
+  });
+}
+
+function openSkillTooltip(button) {
+  const wrap = button.closest(".skills-summary__help-wrap");
+  if (!wrap) return;
+
+  closeSkillTooltips(wrap);
+  wrap.classList.add("is-open");
+}
+
+function getGradeSkillStatsItems(grade, totals) {
   const gradeTotals = getSkillTotals(grade.id);
   const counts = getGreenCountsForGrade(grade.id);
+  const items = [
+    `${counts.total} из ${totals.total} всего`,
+    getRequiredStatsItem(`${counts.required} из ${gradeTotals.required} обязательно`),
+  ];
+
+  if (gradeTotals.extra > 0) {
+    items.push(getExtraStatsItem(`${counts.extra} из ${gradeTotals.extra} дополнительно`));
+  }
+
+  items.push(getBasicMinimumStatsItem(counts.total));
+  return items;
+}
+
+function appendGradeSkillSummary(grade, totals) {
   const section = document.createElement("section");
   section.className = "skills-summary__section";
 
@@ -580,12 +705,7 @@ function appendGradeSkillSummary(grade, totals) {
 
   section.append(
     title,
-    createSkillStatsList([
-      `${counts.total} из ${totals.total} всего`,
-      `${counts.required} из ${gradeTotals.required} обязательно`,
-      `${counts.extra} из ${gradeTotals.extra} дополнительно`,
-      getBasicMinimumStatsItem(counts.total),
-    ]),
+    createSkillStatsList(getGradeSkillStatsItems(grade, totals)),
   );
 
   skillsSummaryContent.append(section);
@@ -602,23 +722,16 @@ function updateSidebarSkillStats() {
       setSkillSummaryTitle("Навыки");
       skillsSummaryContent.append(createSkillStatsList([
         `${totals.total} всего`,
-        `${totals.required} обязательно`,
-        `${totals.extra} дополнительно`,
+        getRequiredStatsItem(`${totals.required} обязательно`),
+        getExtraStatsItem(`${totals.extra} дополнительно`),
         getBasicMinimumStatsItem(null),
       ]));
       return;
     }
 
     const firstGrade = gradesWithMarkedSkills[0];
-    const firstTotals = getSkillTotals(firstGrade.id);
-    const firstCounts = getGreenCountsForGrade(firstGrade.id);
     setSkillSummaryTitle(`Навыки ${getGradeShortName(firstGrade)}`, firstGrade);
-    skillsSummaryContent.append(createSkillStatsList([
-      `${firstCounts.total} из ${totals.total} всего`,
-      `${firstCounts.required} из ${firstTotals.required} обязательно`,
-      `${firstCounts.extra} из ${firstTotals.extra} дополнительно`,
-      getBasicMinimumStatsItem(firstCounts.total),
-    ]));
+    skillsSummaryContent.append(createSkillStatsList(getGradeSkillStatsItems(firstGrade, totals)));
 
     gradesWithMarkedSkills
       .slice(1)
@@ -628,21 +741,54 @@ function updateSidebarSkillStats() {
 
   const selected = grades.find((grade) => grade.id === selectedGrade);
   setSkillSummaryTitle(`Навыки ${getGradeShortName(selected)}`, hasMarkedSkillsForGrade(selectedGrade) ? selected : null);
-  const selectedTotals = getSkillTotals(selectedGrade);
-  const selectedCounts = getGreenCountsForGrade(selectedGrade);
-  skillsSummaryContent.append(createSkillStatsList([
-    `${selectedCounts.total} из ${totals.total} всего`,
-    `${selectedCounts.required} из ${selectedTotals.required} обязательно`,
-    `${selectedCounts.extra} из ${selectedTotals.extra} дополнительно`,
-    getBasicMinimumStatsItem(selectedCounts.total),
-  ]));
+  skillsSummaryContent.append(createSkillStatsList(getGradeSkillStatsItems(selected, totals)));
+
+  grades
+    .filter((grade) => grade.id !== selectedGrade)
+    .filter((grade) => hasMarkedSkillsForGrade(grade.id))
+    .forEach((grade) => appendGradeSkillSummary(grade, totals));
 }
 
 skillsSummaryContent.addEventListener("click", (event) => {
+  const helpButton = event.target.closest(".skills-summary__help");
+  if (helpButton) {
+    openSkillTooltip(helpButton);
+    return;
+  }
+
   const resetButton = event.target.closest("[data-reset-grade]");
   if (!resetButton) return;
   resetGradeStatuses(resetButton.dataset.resetGrade);
   renderMatrix();
+});
+
+skillsSummaryContent.addEventListener("pointerover", (event) => {
+  const helpButton = event.target.closest(".skills-summary__help");
+  if (!helpButton) return;
+  openSkillTooltip(helpButton);
+});
+
+skillsSummaryContent.addEventListener("pointerout", (event) => {
+  const helpWrap = event.target.closest(".skills-summary__help-wrap");
+  if (!helpWrap || helpWrap.contains(event.relatedTarget)) return;
+  helpWrap.classList.remove("is-open");
+});
+
+skillsSummaryContent.addEventListener("focusin", (event) => {
+  const helpButton = event.target.closest(".skills-summary__help");
+  if (!helpButton) return;
+  openSkillTooltip(helpButton);
+});
+
+skillsSummaryContent.addEventListener("focusout", (event) => {
+  const helpWrap = event.target.closest(".skills-summary__help-wrap");
+  if (!helpWrap || helpWrap.contains(event.relatedTarget)) return;
+  helpWrap.classList.remove("is-open");
+});
+
+document.addEventListener("click", (event) => {
+  if (event.target.closest(".skills-summary__help-wrap")) return;
+  closeSkillTooltips();
 });
 
 skillsSummaryTitle.addEventListener("click", (event) => {
