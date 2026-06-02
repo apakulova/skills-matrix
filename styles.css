@@ -342,7 +342,6 @@ button {
   position: relative;
   min-height: 100vh;
   overflow-x: visible;
-  padding-bottom: 8px;
 }
 
 .matrix-panel::before {
