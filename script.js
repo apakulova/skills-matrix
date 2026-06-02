@@ -515,6 +515,7 @@ const contentPanel = matrixPanel.parentElement;
 const gradeButtons = document.querySelectorAll(".filter-chip");
 const skillsSummaryTitle = document.querySelector("#skills-summary-title");
 const skillsSummaryContent = document.querySelector("#skills-summary-content");
+const downloadPdfButton = document.querySelector("#download-pdf");
 
 function clampNumber(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -902,6 +903,169 @@ function openSkillTooltip(button) {
   wrap.classList.add("is-open");
 }
 
+function waitForNextFrame() {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve));
+  });
+}
+
+function waitForImages(root) {
+  const images = [...root.querySelectorAll("img")];
+  return Promise.all(images.map((image) => {
+    if (image.complete && image.naturalWidth > 0) return Promise.resolve();
+
+    return new Promise((resolve) => {
+      image.addEventListener("load", resolve, { once: true });
+      image.addEventListener("error", resolve, { once: true });
+    });
+  }));
+}
+
+async function waitForExportAssets(root) {
+  if (document.fonts?.ready) {
+    await document.fonts.ready;
+  }
+  await waitForImages(root);
+  await waitForNextFrame();
+}
+
+function getPdfFileName() {
+  const date = new Date();
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `skills-matrix-${day}-${month}-${year}.pdf`;
+}
+
+function getPdfLibraries() {
+  return {
+    html2canvas: window.html2canvas,
+    jsPDF: window.jspdf?.jsPDF,
+  };
+}
+
+function savePageCanvasesAsPdf(canvases) {
+  const { jsPDF } = getPdfLibraries();
+  const firstCanvas = canvases[0];
+  const pdf = new jsPDF({
+    orientation: firstCanvas.width > firstCanvas.height ? "landscape" : "portrait",
+    unit: "px",
+    format: [firstCanvas.width, firstCanvas.height],
+  });
+
+  canvases.forEach((canvas, index) => {
+    if (index > 0) {
+      pdf.addPage([canvas.width, canvas.height], canvas.width > canvas.height ? "landscape" : "portrait");
+    }
+    pdf.addImage(canvas.toDataURL("image/jpeg", 0.96), "JPEG", 0, 0, canvas.width, canvas.height);
+  });
+
+  pdf.save(getPdfFileName());
+}
+
+function createExportRoot() {
+  const sourceRoot = document.querySelector(".app-layout");
+  const previousOpenGroups = { ...openGroups };
+  const previousScrollTop = contentPanel.scrollTop;
+  const previousScrollLeft = contentPanel.scrollLeft;
+
+  Object.keys(openGroups).forEach((groupId) => {
+    openGroups[groupId] = true;
+  });
+  renderMatrix();
+
+  const exportRoot = sourceRoot.cloneNode(true);
+  exportRoot.classList.add("export-capture-root");
+
+  openGroups = previousOpenGroups;
+  renderMatrix();
+  restoreMatrixScroll(previousScrollTop, previousScrollLeft);
+  requestAnimationFrame(() => restoreMatrixScroll(previousScrollTop, previousScrollLeft));
+
+  return exportRoot;
+}
+
+function keepOnlyExportGroup(exportRoot, groupId) {
+  const exportMatrix = exportRoot.querySelector("#matrix");
+  const headerCellsCount = grades.length + 1;
+  const children = [...exportMatrix.children];
+  let currentGroupId = null;
+
+  children.forEach((child, index) => {
+    if (index < headerCellsCount) return;
+
+    if (child.classList.contains("accordion-trigger")) {
+      currentGroupId = child.dataset.group;
+      if (currentGroupId !== groupId) child.remove();
+      return;
+    }
+
+    if (currentGroupId !== groupId) child.remove();
+  });
+}
+
+function mountExportRoot(exportRoot) {
+  const host = document.createElement("div");
+  host.className = "export-capture-host";
+  host.append(exportRoot);
+  document.body.append(host);
+  return host;
+}
+
+async function captureExportRoot(exportRoot) {
+  const { html2canvas } = getPdfLibraries();
+  const exportHost = mountExportRoot(exportRoot);
+
+  try {
+    await waitForExportAssets(exportRoot);
+    const width = exportRoot.scrollWidth;
+    const height = exportRoot.scrollHeight;
+    return await html2canvas(exportRoot, {
+      backgroundColor: "#ffffff",
+      scale: Math.min(2, window.devicePixelRatio || 1),
+      width,
+      height,
+      windowWidth: width,
+      windowHeight: height,
+      scrollX: 0,
+      scrollY: 0,
+      useCORS: true,
+      ignoreElements: (element) => element.classList?.contains("no-export"),
+    });
+  } finally {
+    exportHost.remove();
+  }
+}
+
+async function exportMatrixToPdf() {
+  const { html2canvas, jsPDF } = getPdfLibraries();
+  if (!html2canvas || !jsPDF) {
+    throw new Error("PDF libraries are not loaded");
+  }
+
+  closeSkillTooltips();
+  const fullExportRoot = createExportRoot();
+  const sectionIds = rows
+    .filter((row) => row.type === "section")
+    .map((row) => row.id);
+  const pageCanvases = [];
+
+  for (const sectionId of sectionIds) {
+    const pageExportRoot = fullExportRoot.cloneNode(true);
+    keepOnlyExportGroup(pageExportRoot, sectionId);
+    pageCanvases.push(await captureExportRoot(pageExportRoot));
+  }
+
+  savePageCanvasesAsPdf(pageCanvases);
+}
+
+function setPdfButtonLoading(isLoading) {
+  if (!downloadPdfButton) return;
+  downloadPdfButton.disabled = isLoading;
+  downloadPdfButton.classList.toggle("is-loading", isLoading);
+  downloadPdfButton.textContent = isLoading ? "Готовим PDF..." : "Скачать матрицу как PDF";
+}
+
 function getGradeSkillStatsItems(grade, totals) {
   const gradeTotals = getSkillTotals(grade.id);
   const counts = getGreenCountsForGrade(grade.id);
@@ -1030,6 +1194,23 @@ gradeButtons.forEach((button) => {
     renderMatrix();
   });
 });
+
+if (downloadPdfButton) {
+  downloadPdfButton.addEventListener("click", async () => {
+    setPdfButtonLoading(true);
+
+    try {
+      await exportMatrixToPdf();
+    } catch (error) {
+      console.error(error);
+      downloadPdfButton.textContent = "Не удалось скачать PDF";
+      window.setTimeout(() => setPdfButtonLoading(false), 2200);
+      return;
+    }
+
+    setPdfButtonLoading(false);
+  });
+}
 
 matrix.addEventListener("click", (event) => {
   const accordion = event.target.closest(".accordion-trigger");

@@ -61,7 +61,8 @@ button {
 .app-layout {
   display: grid;
   grid-template-columns: var(--sidebar) minmax(0, 1fr);
-  min-height: 100vh;
+  height: 100vh;
+  min-height: 0;
 }
 
 .sidebar {
@@ -76,7 +77,8 @@ button {
   padding: 14px 32px 32px;
   background: #fff;
   border-right: 1px solid var(--line);
-  overflow: visible;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .sidebar-logo {
@@ -331,6 +333,34 @@ button {
   cursor: pointer;
 }
 
+.sidebar-action.is-loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.sidebar-action.is-loading::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.38);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.sidebar-action:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .content {
   min-width: 0;
   height: 100vh;
@@ -345,19 +375,7 @@ button {
 }
 
 .matrix-panel::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: var(--matrix-render-width);
-  z-index: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(to right, transparent calc(var(--matrix-line-1) - 0.5px), var(--line) calc(var(--matrix-line-1) - 0.5px) calc(var(--matrix-line-1) + 0.5px), transparent calc(var(--matrix-line-1) + 0.5px)),
-    linear-gradient(to right, transparent calc(var(--matrix-line-2) - 0.5px), var(--line) calc(var(--matrix-line-2) - 0.5px) calc(var(--matrix-line-2) + 0.5px), transparent calc(var(--matrix-line-2) + 0.5px)),
-    linear-gradient(to right, transparent calc(var(--matrix-line-3) - 0.5px), var(--line) calc(var(--matrix-line-3) - 0.5px) calc(var(--matrix-line-3) + 0.5px), transparent calc(var(--matrix-line-3) + 0.5px)),
-    linear-gradient(to right, transparent calc(var(--matrix-line-4) - 0.5px), var(--line) calc(var(--matrix-line-4) - 0.5px) calc(var(--matrix-line-4) + 0.5px), transparent calc(var(--matrix-line-4) + 0.5px));
+  content: none;
 }
 
 .matrix-panel.is-collapsed::before {
@@ -433,6 +451,11 @@ button {
 }
 
 .grade-head.is-muted {
+  background: #fff;
+}
+
+.grade-head.is-muted img,
+.grade-head.is-muted .grade-title {
   filter: grayscale(1);
   opacity: 0.32;
 }
@@ -645,9 +668,80 @@ button {
   background: var(--partial);
 }
 
-@media (max-width: 900px) {
+.export-capture-host {
+  position: absolute;
+  top: 0;
+  left: -100000px;
+  width: calc(var(--sidebar) + var(--matrix-render-width));
+  overflow: visible;
+  background: #fff;
+  pointer-events: none;
+}
+
+.app-layout.export-capture-root {
+  width: calc(var(--sidebar) + var(--matrix-render-width));
+  min-height: auto;
+  display: grid;
+  grid-template-columns: var(--sidebar) var(--matrix-render-width);
+  background: #fff;
+}
+
+.export-capture-root .skills-summary__help-wrap,
+.export-capture-root .skills-summary__reset {
+  display: none !important;
+}
+
+.export-capture-root .filter-chip.is-active {
+  padding: 7px 14px;
+  border: 2px solid var(--ink);
+  background: #fff;
+  box-shadow: none;
+  color: var(--ink);
+}
+
+.export-capture-root .accordion-trigger::after {
+  display: none;
+  content: none;
+}
+
+.export-capture-root .sidebar {
+  position: static;
+  height: auto;
+  min-height: 100vh;
+  overflow: visible;
+}
+
+.export-capture-root .content {
+  height: auto;
+  overflow: visible;
+  padding: 0;
+}
+
+.export-capture-root .matrix-panel {
+  min-height: auto;
+  overflow: visible;
+}
+
+.export-capture-root .corner-head,
+.export-capture-root .grade-head {
+  position: relative;
+  top: auto;
+}
+
+.export-capture-root .skills-summary__tooltip {
+  display: none !important;
+}
+
+.export-capture-root .skill-title.is-last-matrix-row,
+.export-capture-root .skill-cell.is-last-matrix-row {
+  border-bottom: 1px solid var(--line);
+}
+
+@media (max-width: 720px) {
   .app-layout {
     display: block;
+    height: auto;
+    min-height: 100vh;
   }
 
   .sidebar {
@@ -656,6 +750,8 @@ button {
     padding: 22px 18px;
     border-right: 0;
     border-bottom: 1px solid var(--line);
+    overflow: visible;
+    overscroll-behavior: auto;
   }
 
   h1 {
