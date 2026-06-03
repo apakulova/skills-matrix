@@ -1067,17 +1067,54 @@ function updateGradeControls() {
 }
 
 function countGreenSkillsForGrade(gradeId, kind) {
+  if (!kind) {
+    return getCountedSkillRowsForGrade(gradeId)
+      .filter((row) => isSkillUnitGreen(row, gradeId))
+      .length;
+  }
+
   return rows
     .filter((row) => row.type !== "section")
     .filter((row) => row.cells[gradeId])
-    .filter((row) => kind || countsAsSkill(row))
-    .filter((row) => !kind || getCellKind(row, gradeId) === kind)
+    .filter((row) => getCellKind(row, gradeId) === kind)
     .filter((row) => getStatus(row.id, gradeId) === "yes")
     .length;
 }
 
+function getSkillRows() {
+  return rows.filter((row) => row.type !== "section");
+}
+
+function getCountedSkillRowsForGrade(gradeId) {
+  return getSkillRows()
+    .filter(countsAsSkill)
+    .filter((row) => !gradeId || row.cells[gradeId]);
+}
+
+function getChildSubrows(parentRow) {
+  const startIndex = rows.indexOf(parentRow);
+  if (startIndex === -1) return [];
+
+  const subrows = [];
+  for (let index = startIndex + 1; index < rows.length; index += 1) {
+    const row = rows[index];
+    if (row.type === "section" || !row.subrow || row.title !== parentRow.title) break;
+    subrows.push(row);
+  }
+
+  return subrows;
+}
+
+function isSkillUnitGreen(row, gradeId) {
+  if (getStatus(row.id, gradeId) === "yes") return true;
+
+  return getChildSubrows(row)
+    .filter((subrow) => subrow.cells[gradeId])
+    .some((subrow) => getStatus(subrow.id, gradeId) === "yes");
+}
+
 function getSkillTotals(gradeId) {
-  const skillRows = rows.filter((row) => row.type !== "section");
+  const skillRows = getSkillRows();
   const countedSkillRows = skillRows.filter(countsAsSkill);
   if (!gradeId) {
     return {
