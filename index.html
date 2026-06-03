@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=20260602-cell-borders-mobile-scroll" />
+    <link rel="stylesheet" href="styles.css?v=20260603-pdf-actual-date" />
   </head>
   <body>
     <div class="app-layout">
@@ -40,7 +40,11 @@
           </section>
         </div>
 
-        <button class="sidebar-action no-export" id="download-pdf" type="button">Скачать матрицу как PDF</button>
+        <div class="sidebar-actions no-export">
+          <button class="sidebar-action" id="download-pdf" type="button">Скачать матрицу как PDF</button>
+          <button class="sidebar-action sidebar-action--secondary" id="copy-link" type="button">Скопировать ссылку</button>
+          <p class="sidebar-actions__meta" id="copy-link-meta" aria-live="polite"></p>
+        </div>
       </aside>
 
       <main class="content">
@@ -52,6 +56,6 @@
 
     <script src="vendor/html2canvas.min.js?v=1.4.1"></script>
     <script src="vendor/jspdf.umd.min.js?v=2.5.1"></script>
-    <script src="script.js?v=20260602-export-groups"></script>
+    <script src="script.js?v=20260603-snapshot-mode-status"></script>
   </body>
 </html>

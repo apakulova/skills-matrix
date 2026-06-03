@@ -457,6 +457,21 @@ const statusLabel = {
   no: "Нет",
   partial: "Так-сяк",
 };
+const matrixStateVersion = 1;
+const matrixHashParam = "matrix";
+const matrixDraftsStorageKey = "editorMatrixDrafts";
+const activeDraftStorageKey = "editorMatrixActiveDraftId";
+const legacyStatusesStorageKey = "editorMatrixStatuses";
+const statusToLinkCode = {
+  yes: 1,
+  no: 2,
+  partial: 3,
+};
+const linkCodeToStatus = {
+  1: "yes",
+  2: "no",
+  3: "partial",
+};
 
 function typographText(value) {
   if (!value || !value.trim()) return value;
@@ -497,17 +512,335 @@ function typographElement(root) {
   });
 }
 
+function createDraftId() {
+  if (window.crypto?.randomUUID) {
+    return window.crypto.randomUUID().slice(0, 8);
+  }
+
+  return `m${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getDefaultOpenGroups() {
+  return rows
+    .filter((row) => row.type === "section")
+    .reduce((groups, row) => {
+      groups[row.id] = true;
+      return groups;
+    }, {});
+}
+
+function readJsonStorage(key, fallback) {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJsonStorage(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function getKnownRowIds() {
+  return new Set(rows.filter((row) => row.type !== "section").map((row) => row.id));
+}
+
+function getKnownGradeIds() {
+  return new Set(grades.map((grade) => grade.id));
+}
+
+function isKnownGrade(gradeId) {
+  return gradeId === "all" || getKnownGradeIds().has(gradeId);
+}
+
+function cleanLinkCreatedAt(value) {
+  if (!value) return "";
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+}
+
+function formatLinkCreatedAt(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}.${month}.${year}`;
+}
+
+function cleanStatuses(rawStatuses) {
+  const rowIds = getKnownRowIds();
+  const gradeIds = getKnownGradeIds();
+  const clean = {};
+
+  Object.entries(rawStatuses || {}).forEach(([key, status]) => {
+    const [rowId, gradeId] = key.split(":");
+    if (!rowIds.has(rowId) || !gradeIds.has(gradeId)) return;
+    if (!statusToLinkCode[status]) return;
+    clean[statusKey(rowId, gradeId)] = status;
+  });
+
+  return clean;
+}
+
+function getOpenGroupIds(openGroupMap) {
+  return Object.entries(openGroupMap || {})
+    .filter(([, isOpen]) => isOpen)
+    .map(([groupId]) => groupId);
+}
+
+function getOpenGroupsFromIds(openGroupIds) {
+  const groups = getDefaultOpenGroups();
+  if (!Array.isArray(openGroupIds)) return groups;
+
+  Object.keys(groups).forEach((groupId) => {
+    groups[groupId] = openGroupIds.includes(groupId);
+  });
+
+  return groups;
+}
+
+function getMatrixState() {
+  return {
+    v: matrixStateVersion,
+    draftId: currentDraftId,
+    linkCreatedAt,
+    linkDirty: isLinkDirty,
+    grade: isKnownGrade(selectedGrade) ? selectedGrade : "all",
+    statuses: cleanStatuses(statuses),
+    openGroups: { ...openGroups },
+  };
+}
+
+function applyMatrixState(state) {
+  currentDraftId = state.draftId || createDraftId();
+  isSnapshotMode = Boolean(state.fromSnapshot);
+  linkCreatedAt = cleanLinkCreatedAt(state.linkCreatedAt);
+  isLinkDirty = Boolean(state.linkDirty && linkCreatedAt);
+  selectedGrade = isKnownGrade(state.grade) ? state.grade : "all";
+  statuses = cleanStatuses(state.statuses);
+  openGroups = {
+    ...getDefaultOpenGroups(),
+    ...(state.openGroups || {}),
+  };
+  updateLinkMeta();
+}
+
+function serializeMatrixState(state = getMatrixState()) {
+  const statusEntries = Object.entries(cleanStatuses(state.statuses))
+    .map(([key, status]) => {
+      const [rowId, gradeId] = key.split(":");
+      return [rowId, gradeId, statusToLinkCode[status]];
+    })
+    .sort(([rowA, gradeA], [rowB, gradeB]) => `${rowA}:${gradeA}`.localeCompare(`${rowB}:${gradeB}`));
+
+  return {
+    v: matrixStateVersion,
+    d: state.draftId || createDraftId(),
+    c: cleanLinkCreatedAt(state.linkCreatedAt),
+    u: Boolean(state.linkDirty && state.linkCreatedAt),
+    g: isKnownGrade(state.grade) ? state.grade : "all",
+    s: statusEntries,
+    o: getOpenGroupIds(state.openGroups),
+  };
+}
+
+function deserializeMatrixState(serializedState) {
+  const state = serializedState || {};
+  const statusesFromLink = {};
+
+  if (Array.isArray(state.s)) {
+    const rowIds = getKnownRowIds();
+    const gradeIds = getKnownGradeIds();
+
+    state.s.forEach(([rowId, gradeId, statusCode]) => {
+      const status = linkCodeToStatus[statusCode];
+      if (!rowIds.has(rowId) || !gradeIds.has(gradeId) || !status) return;
+      statusesFromLink[statusKey(rowId, gradeId)] = status;
+    });
+  }
+
+  return {
+    v: matrixStateVersion,
+    draftId: typeof state.d === "string" && state.d ? state.d : createDraftId(),
+    linkCreatedAt: cleanLinkCreatedAt(state.c || state.linkCreatedAt),
+    linkDirty: Boolean(state.u || state.linkDirty),
+    grade: isKnownGrade(state.g) ? state.g : "all",
+    statuses: Array.isArray(state.s) ? statusesFromLink : cleanStatuses(state.statuses),
+    openGroups: getOpenGroupsFromIds(state.o),
+  };
+}
+
+function encodeBase64Url(value) {
+  const bytes = new TextEncoder().encode(value);
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
+
+function decodeBase64Url(value) {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+  const binary = atob(padded);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function encodeMatrixStateForUrl(state = getMatrixState()) {
+  return encodeBase64Url(JSON.stringify(serializeMatrixState(state)));
+}
+
+function decodeMatrixStateFromUrl(value) {
+  return deserializeMatrixState(JSON.parse(decodeBase64Url(value)));
+}
+
+function getHashMatrixValue() {
+  const hash = window.location.hash.replace(/^#/, "");
+  if (!hash) return "";
+  return new URLSearchParams(hash).get(matrixHashParam) || "";
+}
+
+function readDrafts() {
+  const drafts = readJsonStorage(matrixDraftsStorageKey, {});
+  return drafts && typeof drafts === "object" && !Array.isArray(drafts) ? drafts : {};
+}
+
+function saveMatrixState(state = getMatrixState()) {
+  const serializedState = serializeMatrixState(state);
+  const drafts = readDrafts();
+  drafts[serializedState.d] = serializedState;
+  writeJsonStorage(matrixDraftsStorageKey, drafts);
+  localStorage.setItem(activeDraftStorageKey, serializedState.d);
+  updateLinkMeta();
+}
+
+function loadMatrixState() {
+  const hashValue = getHashMatrixValue();
+  if (hashValue) {
+    try {
+      return {
+        ...decodeMatrixStateFromUrl(hashValue),
+        fromSnapshot: true,
+      };
+    } catch (error) {
+      console.warn("Не удалось прочитать состояние матрицы из ссылки", error);
+    }
+  }
+
+  const drafts = readDrafts();
+  const activeDraftId = localStorage.getItem(activeDraftStorageKey);
+  if (activeDraftId && drafts[activeDraftId]) {
+    return {
+      ...deserializeMatrixState(drafts[activeDraftId]),
+      fromSnapshot: false,
+    };
+  }
+
+  const firstDraft = Object.values(drafts)[0];
+  if (firstDraft) {
+    return {
+      ...deserializeMatrixState(firstDraft),
+      fromSnapshot: false,
+    };
+  }
+
+  return {
+    v: matrixStateVersion,
+    fromSnapshot: false,
+    draftId: createDraftId(),
+    linkCreatedAt: "",
+    linkDirty: false,
+    grade: "all",
+    statuses: cleanStatuses(readJsonStorage(legacyStatusesStorageKey, {})),
+    openGroups: getDefaultOpenGroups(),
+  };
+}
+
+function getMatrixSnapshotUrl(createdAt = new Date().toISOString()) {
+  const url = new URL(window.location.href);
+  url.hash = `${matrixHashParam}=${encodeMatrixStateForUrl({
+    ...getMatrixState(),
+    linkCreatedAt: createdAt,
+    linkDirty: false,
+  })}`;
+  return url.toString();
+}
+
+function markLinkDirty() {
+  if (!isSnapshotMode || !linkCreatedAt) return;
+  isLinkDirty = true;
+}
+
+function updateLinkMeta() {
+  if (!copyLinkMeta) return;
+
+  if (!isSnapshotMode || !linkCreatedAt) {
+    copyLinkMeta.textContent = "";
+    return;
+  }
+
+  const date = formatLinkCreatedAt(linkCreatedAt);
+  copyLinkMeta.textContent = isLinkDirty
+    ? "Матрица изменилась — старая ссылка больше не актуальна"
+    : `Матрица актуальна на ${date}`;
+}
+
+function fallbackCopyText(text) {
+  const field = document.createElement("textarea");
+  field.value = text;
+  field.setAttribute("readonly", "");
+  field.style.position = "fixed";
+  field.style.top = "-1000px";
+  field.style.left = "-1000px";
+  document.body.append(field);
+  field.select();
+
+  try {
+    return document.execCommand("copy");
+  } finally {
+    field.remove();
+  }
+}
+
+async function copyText(text) {
+  if (fallbackCopyText(text)) return true;
+
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return true;
+  }
+
+  throw new Error("Copy command failed");
+}
+
+function setCopyLinkButtonText(text, restoreDelay = 1800) {
+  if (!copyLinkButton) return;
+
+  copyLinkButton.textContent = text;
+  if (restoreDelay) {
+    window.setTimeout(() => {
+      copyLinkButton.textContent = "Скопировать ссылку";
+      copyLinkButton.disabled = false;
+    }, restoreDelay);
+  }
+}
+
 let selectedGrade = "all";
-let statuses = JSON.parse(localStorage.getItem("editorMatrixStatuses") || "{}");
-let openGroups = {
-  text: true,
-  information: true,
-  "product-thinking": true,
-  communication: true,
-  processes: true,
-  "personal-development": true,
-  "editorial-development": true,
-};
+let isSnapshotMode = false;
+let linkCreatedAt = "";
+let isLinkDirty = false;
+let statuses = {};
+let openGroups = getDefaultOpenGroups();
+let currentDraftId = createDraftId();
 
 const matrix = document.querySelector("#matrix");
 const matrixPanel = matrix.parentElement;
@@ -516,6 +849,8 @@ const gradeButtons = document.querySelectorAll(".filter-chip");
 const skillsSummaryTitle = document.querySelector("#skills-summary-title");
 const skillsSummaryContent = document.querySelector("#skills-summary-content");
 const downloadPdfButton = document.querySelector("#download-pdf");
+const copyLinkButton = document.querySelector("#copy-link");
+const copyLinkMeta = document.querySelector("#copy-link-meta");
 
 function clampNumber(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -547,7 +882,8 @@ function setStatus(rowId, gradeId, status) {
   } else {
     statuses[key] = status;
   }
-  localStorage.setItem("editorMatrixStatuses", JSON.stringify(statuses));
+  markLinkDirty();
+  saveMatrixState();
 }
 
 function makeCell(tag, className, text) {
@@ -821,7 +1157,8 @@ function resetGradeStatuses(gradeId) {
     .forEach((key) => {
       delete statuses[key];
     });
-  localStorage.setItem("editorMatrixStatuses", JSON.stringify(statuses));
+  markLinkDirty();
+  saveMatrixState();
 }
 
 function getGradeShortName(grade) {
@@ -937,6 +1274,10 @@ function getPdfFileName() {
   return `skills-matrix-${day}-${month}-${year}.pdf`;
 }
 
+function getMatrixActualDateText(date = new Date()) {
+  return `Матрица актуальна на ${formatLinkCreatedAt(date.toISOString())}`;
+}
+
 function getPdfLibraries() {
   return {
     html2canvas: window.html2canvas,
@@ -976,6 +1317,10 @@ function createExportRoot() {
 
   const exportRoot = sourceRoot.cloneNode(true);
   exportRoot.classList.add("export-capture-root");
+  const exportDate = document.createElement("p");
+  exportDate.className = "skills-summary__export-date";
+  exportDate.textContent = typographText(getMatrixActualDateText());
+  exportRoot.querySelector(".skills-summary")?.append(exportDate);
 
   openGroups = previousOpenGroups;
   renderMatrix();
@@ -1191,9 +1536,34 @@ skillsSummaryTitle.addEventListener("click", (event) => {
 gradeButtons.forEach((button) => {
   button.addEventListener("click", () => {
     selectedGrade = button.dataset.gradeFilter;
+    markLinkDirty();
+    saveMatrixState();
     renderMatrix();
   });
 });
+
+if (copyLinkButton) {
+  copyLinkButton.addEventListener("click", async () => {
+    copyLinkButton.disabled = true;
+    const snapshotCreatedAt = new Date().toISOString();
+    const snapshotUrl = getMatrixSnapshotUrl(snapshotCreatedAt);
+
+    try {
+      await copyText(snapshotUrl);
+      if (isSnapshotMode) {
+        linkCreatedAt = snapshotCreatedAt;
+        isLinkDirty = false;
+        saveMatrixState();
+      } else {
+        updateLinkMeta();
+      }
+      setCopyLinkButtonText("✓ Ссылка скопирована");
+    } catch (error) {
+      console.error(error);
+      setCopyLinkButtonText("Не удалось скопировать", 2200);
+    }
+  });
+}
 
 if (downloadPdfButton) {
   downloadPdfButton.addEventListener("click", async () => {
@@ -1216,6 +1586,8 @@ matrix.addEventListener("click", (event) => {
   const accordion = event.target.closest(".accordion-trigger");
   if (accordion) {
     openGroups[accordion.dataset.group] = !openGroups[accordion.dataset.group];
+    markLinkDirty();
+    saveMatrixState();
     renderMatrix();
     return;
   }
@@ -1232,4 +1604,14 @@ matrix.addEventListener("click", (event) => {
 
 window.addEventListener("resize", updateMatrixLayoutVariables);
 
+window.addEventListener("hashchange", () => {
+  if (!getHashMatrixValue()) return;
+
+  applyMatrixState(loadMatrixState());
+  saveMatrixState();
+  renderMatrix();
+});
+
+applyMatrixState(loadMatrixState());
+saveMatrixState();
 renderMatrix();
