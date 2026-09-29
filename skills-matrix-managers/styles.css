@@ -2,13 +2,72 @@
   min-height: 160px;
 }
 
+.sidebar {
+  justify-content: flex-start;
+}
+
+.sidebar-motto {
+  align-self: center;
+  max-width: 252px;
+  margin: auto 0 8px;
+  color: var(--accent);
+  font-family: "Marck Script", cursive;
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1.08;
+  text-align: center;
+  transform: rotate(-4deg);
+  transform-origin: center;
+}
+
+.sidebar-motto span {
+  display: block;
+}
+
+.sidebar-motto[hidden] {
+  display: none;
+}
+
+.sidebar-motto[hidden] + .sidebar-actions {
+  margin-top: auto;
+}
+
+.skills-summary h2.has-reset,
+.skills-summary__title {
+  align-items: flex-start;
+}
+
+.skills-summary__reset {
+  margin-top: 3px;
+}
+
+.skills-summary__icon {
+  width: 20px;
+  height: 22px;
+}
+
 .chip-group {
   column-gap: 5px;
 }
 
+.grade-head[data-grade="group-lead"] img {
+  bottom: -7px;
+  height: 122px;
+}
+
+.grade-head[data-grade="chief-editor"] img {
+  bottom: -18px;
+  height: 144px;
+}
+
+.grade-head[data-grade="head-of-texts"] img {
+  bottom: -9px;
+  height: 126px;
+}
+
 .grade-head[data-grade="department-director"] img {
   left: 0;
-  bottom: 0;
+  bottom: -5px;
   height: 120px;
   max-width: 120px;
 }

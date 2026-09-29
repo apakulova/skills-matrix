@@ -5,7 +5,7 @@ const grades = [
     "fullLabel": "Руководитель группы",
     "caption": "Team leader",
     "shortName": "руководителя группы",
-    "image": "../assets/junior-mushroom.png?v=20260530-crop3"
+    "image": "../assets/manager-team-lead.png?v=20260929-2"
   },
   {
     "id": "chief-editor",
@@ -13,7 +13,7 @@ const grades = [
     "fullLabel": "Главред направления",
     "caption": "Chief editor",
     "shortName": "главреда",
-    "image": "../assets/middle-mushroom.png?v=20260530-crop3"
+    "image": "../assets/manager-chief-editor.png?v=20260929-2"
   },
   {
     "id": "head-of-texts",
@@ -21,7 +21,7 @@ const grades = [
     "fullLabel": "Руководитель отдела текстов",
     "caption": "Head of division",
     "shortName": "руководителя отдела",
-    "image": "../assets/senior-mushroom.png?v=20260530-crop3"
+    "image": "../assets/manager-head-of-division.png?v=20260929-3"
   },
   {
     "id": "department-director",
@@ -29,7 +29,7 @@ const grades = [
     "fullLabel": "Руководитель департамента",
     "caption": "Department director",
     "shortName": "руководителя департамента",
-    "image": "../assets/lead-figure.png?v=20260530-crop3"
+    "image": "../assets/manager-department-director.png?v=20260929-2"
   }
 ];
 
@@ -870,6 +870,7 @@ const contentPanel = matrixPanel.parentElement;
 const gradeButtons = document.querySelectorAll(".filter-chip");
 const skillsSummaryTitle = document.querySelector("#skills-summary-title");
 const skillsSummaryContent = document.querySelector("#skills-summary-content");
+const sidebarMotto = document.querySelector("#sidebar-motto");
 const downloadPdfButton = document.querySelector("#download-pdf");
 const copyLinkButton = document.querySelector("#copy-link");
 const copyLinkMeta = document.querySelector("#copy-link-meta");
@@ -1253,7 +1254,7 @@ function createSkillStatsList(items) {
     const icon = document.createElement("img");
     icon.className = "skills-summary__icon";
     if (data.iconClass) icon.classList.add(data.iconClass);
-    icon.src = data.icon || "../assets/skill-counter-mushroom.png?v=20260530";
+    icon.src = data.icon || "../assets/manager-skill-counter-lens.png?v=20260929";
     icon.alt = "";
     icon.setAttribute("aria-hidden", "true");
 
@@ -1497,6 +1498,10 @@ function appendGradeSkillSummary(grade, totals) {
 function updateSidebarSkillStats() {
   const totals = getSkillTotals();
   skillsSummaryContent.innerHTML = "";
+  const hasAnyMarkedSkills = grades.some((grade) => hasMarkedSkillsForGrade(grade.id));
+  const showMotto = selectedGrade === "all" && !hasAnyMarkedSkills;
+  sidebarMotto.hidden = !showMotto;
+  sidebarMotto.setAttribute("aria-hidden", String(!showMotto));
 
   if (selectedGrade === "all") {
     const gradesWithMarkedSkills = grades.filter((grade) => hasMarkedSkillsForGrade(grade.id));
@@ -1504,7 +1509,7 @@ function updateSidebarSkillStats() {
     if (gradesWithMarkedSkills.length === 0) {
       setSkillSummaryTitle("Навыки");
       skillsSummaryContent.append(createSkillStatsList([
-        `0 из ${totals.total} всего`,
+        `${totals.total} всего`,
       ]));
       return;
     }
