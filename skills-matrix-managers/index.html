@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Матрица компетенций руководителей редакции</title>
+    <link rel="icon" type="image/png" href="../assets/favicon.png?v=20260530" />
+    <link rel="apple-touch-icon" href="../assets/favicon.png?v=20260530" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../styles.css?v=20260603-pdf-actual-date" />
+    <link rel="stylesheet" href="styles.css?v=20260929-managers-2" />
+  </head>
+  <body>
+    <div class="app-layout">
+      <aside class="sidebar" aria-label="Фильтры матрицы руководителей">
+        <div>
+          <header class="sidebar-logo" aria-label="Матрица компетенций руководителей редакции">
+            <img src="../assets/hero-mushroom.png?v=20260530-manrope" alt="" aria-hidden="true" />
+            <div class="sidebar-logo__text">
+              <span class="sidebar-logo__title">Матрица компетенций</span>
+              <span class="sidebar-logo__subtitle">руководителей редакции</span>
+            </div>
+          </header>
+
+          <section class="filter-block" aria-labelledby="grade-filter-title">
+            <h2 id="grade-filter-title">Грейд</h2>
+            <div class="chip-group" role="tablist" aria-label="Грейд руководителя">
+              <button class="filter-chip is-active" type="button" data-grade-filter="all" role="tab" aria-selected="true">Все</button>
+              <button class="filter-chip" type="button" data-grade-filter="group-lead" role="tab" aria-selected="false">Тимлид</button>
+              <button class="filter-chip" type="button" data-grade-filter="chief-editor" role="tab" aria-selected="false">Главред</button>
+              <button class="filter-chip" type="button" data-grade-filter="head-of-texts" role="tab" aria-selected="false">Руководитель отдела</button>
+              <button class="filter-chip" type="button" data-grade-filter="department-director" role="tab" aria-selected="false">Руководитель департамента</button>
+            </div>
+          </section>
+
+          <section class="skills-summary" aria-labelledby="skills-summary-title">
+            <h2 id="skills-summary-title">Навыки</h2>
+            <div id="skills-summary-content"></div>
+          </section>
+        </div>
+
+        <div class="sidebar-actions no-export">
+          <button class="sidebar-action" id="download-pdf" type="button">Скачать матрицу как PDF</button>
+          <button class="sidebar-action sidebar-action--secondary" id="copy-link" type="button">Скопировать ссылку</button>
+          <p class="sidebar-actions__meta" id="copy-link-meta" aria-live="polite"></p>
+        </div>
+      </aside>
+
+      <main class="content">
+        <section class="matrix-panel" aria-label="Матрица компетенций руководителей редакции">
+          <div class="matrix" id="matrix"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="../vendor/html2canvas.min.js?v=1.4.1"></script>
+    <script src="../vendor/jspdf.umd.min.js?v=2.5.1"></script>
+    <script src="script.js?v=20260929-managers"></script>
+  </body>
+</html>

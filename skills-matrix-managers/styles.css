@@ -1,0 +1,19 @@
+.skills-summary {
+  min-height: 160px;
+}
+
+.chip-group {
+  column-gap: 5px;
+}
+
+.grade-head[data-grade="department-director"] img {
+  left: 0;
+  bottom: 0;
+  height: 120px;
+  max-width: 120px;
+}
+
+.grade-head[data-grade="department-director"],
+.skill-cell[data-grade="department-director"] {
+  border-right: 0;
+}
