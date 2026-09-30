@@ -1254,7 +1254,7 @@ function createSkillStatsList(items) {
     const icon = document.createElement("img");
     icon.className = "skills-summary__icon";
     if (data.iconClass) icon.classList.add(data.iconClass);
-    icon.src = data.icon || "../assets/manager-skill-counter-lens.png?v=20260929";
+    icon.src = data.icon || "../assets/manager-skill-counter-eye.png?v=20260929";
     icon.alt = "";
     icon.setAttribute("aria-hidden", "true");
 
@@ -1381,6 +1381,8 @@ function createExportRoot() {
   exportDate.className = "skills-summary__export-date";
   exportDate.textContent = typographText(getMatrixActualDateText());
   exportRoot.querySelector(".skills-summary")?.append(exportDate);
+
+  exportRoot.querySelector("#sidebar-motto")?.remove();
 
   openGroups = previousOpenGroups;
   renderMatrix();

@@ -6,30 +6,65 @@
   justify-content: flex-start;
 }
 
-.sidebar-motto {
-  align-self: center;
-  max-width: 252px;
-  margin: auto 0 8px;
-  color: var(--accent);
-  font-family: "Marck Script", cursive;
-  font-size: 25px;
-  font-weight: 400;
-  line-height: 1.08;
-  text-align: center;
-  transform: rotate(-4deg);
+.sidebar-logo img {
+  transform: scale(1.18);
   transform-origin: center;
 }
 
-.sidebar-motto span {
+.sidebar-bottom {
+  position: relative;
+  margin-top: auto;
+}
+
+.sidebar-motto {
+  position: absolute;
+  bottom: calc(100% + 52px);
+  left: 50%;
+  width: 250px;
+  margin: 0;
+  text-align: center;
+  transform: translateX(-50%) translateX(-6px) rotate(-2deg);
+  transform-origin: center;
+}
+
+.sidebar-motto__quote {
+  margin: 0;
+  color: #7e6b50;
+  font-family: "Bad Script", cursive;
+  font-size: 19px;
+  font-weight: 400;
+  line-height: 1.3;
+  opacity: 0.88;
+}
+
+.sidebar-motto__quote span {
   display: block;
+  white-space: nowrap;
+}
+
+.sidebar-motto__quote span:nth-child(1) {
+  transform: translateX(4px);
+}
+
+.sidebar-motto__quote span:nth-child(2) {
+  transform: translateX(-6px);
+}
+
+.sidebar-motto__author {
+  margin-top: 10px;
+  color: #a99a84;
+  font-family: "Poiret One", sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.2;
+  text-align: right;
+  white-space: nowrap;
+  transform: translateX(10px);
 }
 
 .sidebar-motto[hidden] {
   display: none;
-}
-
-.sidebar-motto[hidden] + .sidebar-actions {
-  margin-top: auto;
 }
 
 .skills-summary h2.has-reset,
@@ -42,8 +77,9 @@
 }
 
 .skills-summary__icon {
-  width: 20px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
+  margin: -3px -4px;
 }
 
 .chip-group {
