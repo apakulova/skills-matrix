@@ -942,14 +942,17 @@ function getOrderedGrades() {
   ];
 }
 
-function restoreMatrixScroll(scrollTop, scrollLeft) {
+function restoreMatrixScroll(scrollTop, scrollLeft, pageScrollX, pageScrollY) {
   contentPanel.scrollTop = scrollTop;
   contentPanel.scrollLeft = scrollLeft;
+  window.scrollTo(pageScrollX, pageScrollY);
 }
 
 function renderMatrix() {
   const previousScrollTop = contentPanel.scrollTop;
   const previousScrollLeft = contentPanel.scrollLeft;
+  const previousPageScrollX = window.scrollX;
+  const previousPageScrollY = window.scrollY;
 
   matrix.innerHTML = "";
   updateMatrixLayoutVariables();
@@ -1077,8 +1080,10 @@ function renderMatrix() {
   updateGradeControls();
   updateSidebarSkillStats();
   typographElement(document.body);
-  restoreMatrixScroll(previousScrollTop, previousScrollLeft);
-  requestAnimationFrame(() => restoreMatrixScroll(previousScrollTop, previousScrollLeft));
+  restoreMatrixScroll(previousScrollTop, previousScrollLeft, previousPageScrollX, previousPageScrollY);
+  requestAnimationFrame(() => {
+    restoreMatrixScroll(previousScrollTop, previousScrollLeft, previousPageScrollX, previousPageScrollY);
+  });
 }
 
 function updateGradeControls() {
@@ -1369,6 +1374,8 @@ function createExportRoot() {
   const previousOpenGroups = { ...openGroups };
   const previousScrollTop = contentPanel.scrollTop;
   const previousScrollLeft = contentPanel.scrollLeft;
+  const previousPageScrollX = window.scrollX;
+  const previousPageScrollY = window.scrollY;
 
   Object.keys(openGroups).forEach((groupId) => {
     openGroups[groupId] = true;
@@ -1386,8 +1393,10 @@ function createExportRoot() {
 
   openGroups = previousOpenGroups;
   renderMatrix();
-  restoreMatrixScroll(previousScrollTop, previousScrollLeft);
-  requestAnimationFrame(() => restoreMatrixScroll(previousScrollTop, previousScrollLeft));
+  restoreMatrixScroll(previousScrollTop, previousScrollLeft, previousPageScrollX, previousPageScrollY);
+  requestAnimationFrame(() => {
+    restoreMatrixScroll(previousScrollTop, previousScrollLeft, previousPageScrollX, previousPageScrollY);
+  });
 
   return exportRoot;
 }

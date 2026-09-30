@@ -112,3 +112,23 @@
 .skill-cell[data-grade="department-director"] {
   border-right: 0;
 }
+
+@media (max-width: 720px) {
+  .sidebar-motto {
+    position: static;
+    width: min(250px, calc(100vw - 52px));
+    margin: 16px auto 44px;
+    transform: translateX(-6px) rotate(-2deg);
+  }
+
+  .grade-title {
+    margin-left: 96px;
+    font-size: 26px;
+    line-height: 28px;
+  }
+
+  .grade-title small {
+    font-size: 11px;
+    line-height: 14px;
+  }
+}
