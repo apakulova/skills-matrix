@@ -114,6 +114,10 @@
 }
 
 @media (max-width: 720px) {
+  .skills-summary {
+    min-height: 0;
+  }
+
   .sidebar-motto {
     position: static;
     width: min(250px, calc(100vw - 52px));

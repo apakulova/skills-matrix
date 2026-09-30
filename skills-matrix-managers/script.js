@@ -1094,6 +1094,23 @@ function updateGradeControls() {
   });
 }
 
+function updateSkillCell(cell, status) {
+  const row = rows.find((item) => item.id === cell.dataset.row);
+  const grade = grades.find((item) => item.id === cell.dataset.grade);
+  const previousCellTop = cell.getBoundingClientRect().top;
+
+  cell.dataset.status = status;
+  if (row && grade) {
+    cell.setAttribute("aria-label", `${row.title}, ${grade.fullLabel || grade.label}: ${statusLabel[status]}`);
+  }
+
+  updateSidebarSkillStats();
+  typographElement(document.querySelector(".sidebar"));
+
+  const cellTopDelta = cell.getBoundingClientRect().top - previousCellTop;
+  if (cellTopDelta) window.scrollBy(0, cellTopDelta);
+}
+
 function countGreenSkillsForGrade(gradeId, kind) {
   if (!kind) {
     return getCountedSkillRowsForGrade(gradeId)
@@ -1660,7 +1677,7 @@ matrix.addEventListener("click", (event) => {
   const current = getStatus(cell.dataset.row, cell.dataset.grade);
   const next = statusOrder[(statusOrder.indexOf(current) + 1) % statusOrder.length];
   setStatus(cell.dataset.row, cell.dataset.grade, next);
-  renderMatrix();
+  updateSkillCell(cell, next);
 });
 
 window.addEventListener("resize", updateMatrixLayoutVariables);
